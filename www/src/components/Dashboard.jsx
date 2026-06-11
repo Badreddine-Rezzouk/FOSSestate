@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const StatBox = ({ number, label }) => (
   <div className="bg-gradient-to-br from-primary to-secondary text-white p-6 rounded-lg text-center">
@@ -7,7 +7,7 @@ const StatBox = ({ number, label }) => (
   </div>
 );
 
-const PropertyRow = ({ name, address, tenants, status, onView, onEdit, onDelete }) => (
+const PropertyRow = ({ name, address, tenants, status, onView }) => (
   <tr className="border-b hover:bg-gray-50">
     <td className="px-4 py-3">{name}</td>
     <td className="px-4 py-3">{address}</td>
@@ -17,64 +17,99 @@ const PropertyRow = ({ name, address, tenants, status, onView, onEdit, onDelete 
         {status}
       </span>
     </td>
-    <td className="px-4 py-3 flex gap-2">
+    <td className="px-4 py-3">
       <button onClick={onView} className="px-3 py-1 bg-primary text-white rounded text-sm hover:opacity-80 transition">View</button>
-      <button onClick={onEdit} className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:opacity-80 transition">Edit</button>
-      <button onClick={onDelete} className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:opacity-80 transition">Delete</button>
     </td>
   </tr>
 );
 
-const Dashboard = () => {
-  const [properties] = useState([
-    { id: 1, name: 'Sunset Apartments', address: '123 Main St, Downtown', tenants: 8, status: 'Active' },
-    { id: 2, name: 'North Ridge Residences', address: '456 Oak Ave, North Side', tenants: 12, status: 'Active' },
-    { id: 3, name: 'Central Plaza', address: '789 Plaza Blvd, Center', tenants: 15, status: 'Maintenance' }
-  ]);
+const formatRevenue = (amount) => {
+  if (amount >= 1000) return `$${(amount / 1000).toFixed(1)}K`;
+  return `$${Number(amount).toFixed(0)}`;
+};
 
-  const handleView = (id) => alert(`Viewing property ${id}`);
-  const handleEdit = (id) => alert(`Editing property ${id}`);
-  const handleDelete = (id) => alert(`Deleting property ${id}`);
+const Dashboard = ({ token }) => {
+  const [stats, setStats] = useState(null);
+  const [properties, setProperties] = useState([]);
+  const [serverStatus, setServerStatus] = useState('Loading…');
+
+  useEffect(() => {
+    if (!token) {
+      setServerStatus('Not authenticated');
+      setStats(null);
+      setProperties([]);
+      return;
+    }
+
+    const headers = { Authorization: `Bearer ${token}` };
+
+    fetch('/api/dashboard', { headers })
+      .then((r) => r.json())
+      .then((data) => {
+        setServerStatus(data.status === 'ok' ? 'Connected' : data.status);
+        if (data.stats) setStats(data.stats);
+      })
+      .catch(() => setServerStatus('Offline'));
+
+    fetch('/api/properties', { headers })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.properties) setProperties(data.properties);
+      })
+      .catch(() => {});
+  }, [token]);
 
   return (
     <section id="properties" className="bg-white rounded-lg p-8 shadow-lg">
-      <h2 className="text-4xl font-bold text-gray-800 mb-8">Dashboard Overview</h2>
-      
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+        <div>
+          <h2 className="text-4xl font-bold text-gray-800">Dashboard Overview</h2>
+          <p className="text-gray-600 mt-2">
+            Server: <span className="font-semibold">{serverStatus}</span>
+            {!token && (
+              <span className="ml-2 text-sm text-gray-400">(log in to see live data)</span>
+            )}
+          </p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatBox number="24" label="Total Properties" />
-        <StatBox number="156" label="Active Tenants" />
-        <StatBox number="$45.2K" label="Monthly Revenue" />
-        <StatBox number="8" label="Maintenance Tasks" />
+        <StatBox number={stats ? stats.total_properties : '—'} label="Total Properties" />
+        <StatBox number={stats ? stats.active_tenants : '—'} label="Active Tenants" />
+        <StatBox number={stats ? formatRevenue(stats.monthly_revenue) : '—'} label="Monthly Revenue" />
+        <StatBox number={stats ? stats.open_maintenance : '—'} label="Maintenance Tasks" />
       </div>
 
       <h3 className="text-2xl font-bold text-gray-800 mb-4">Recent Properties</h3>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-4 py-3 text-left font-semibold text-gray-800">Property Name</th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-800">Address</th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-800">Tenants</th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-800">Status</th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-800">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {properties.map(property => (
-              <PropertyRow
-                key={property.id}
-                name={property.name}
-                address={property.address}
-                tenants={property.tenants}
-                status={property.status}
-                onView={() => handleView(property.id)}
-                onEdit={() => handleEdit(property.id)}
-                onDelete={() => handleDelete(property.id)}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {properties.length === 0 ? (
+        <p className="text-gray-500">{token ? 'No properties found.' : 'Log in to view properties.'}</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="px-4 py-3 text-left font-semibold text-gray-800">Property Name</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-800">Address</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-800">Active Tenants</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-800">Type</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-800">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {properties.map((p) => (
+                <PropertyRow
+                  key={p.id}
+                  name={p.name}
+                  address={`${p.address}${p.city ? ', ' + p.city : ''}`}
+                  tenants={p.tenantCount ?? 0}
+                  status={p.propertyType}
+                  onView={() => alert(`Viewing property ${p.id}: ${p.name}`)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 };

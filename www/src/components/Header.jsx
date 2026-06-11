@@ -1,17 +1,7 @@
 import React, { useState } from 'react';
 
-const Header = () => {
+const Header = ({ token, onLoginClick, onLogout }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const showLogin = () => {
-    alert('Opening login page...');
-    // window.location.href = '/login.html';
-  };
-
-  const showSignup = () => {
-    alert('Opening signup page...');
-    // window.location.href = '/signup.html';
-  };
 
   return (
     <header className="sticky top-0 z-100 bg-white shadow-md">
@@ -19,7 +9,7 @@ const Header = () => {
         <div className="flex items-center gap-2 text-2xl font-bold text-primary">
           🏠 FOSSestate
         </div>
-        
+
         <ul className="hidden md:flex list-none gap-8">
           <li><a href="#home" className="text-gray-800 font-medium hover:text-primary transition">Home</a></li>
           <li><a href="#properties" className="text-gray-800 font-medium hover:text-primary transition">Properties</a></li>
@@ -28,19 +18,30 @@ const Header = () => {
         </ul>
 
         <div className="flex items-center gap-4">
-          <button 
-            onClick={showLogin}
-            className="hidden md:block px-6 py-2 border-2 border-primary text-primary font-semibold rounded hover:bg-primary hover:text-white transition"
-          >
-            Login
-          </button>
-          <button 
-            onClick={showSignup}
-            className="hidden md:block px-6 py-2 bg-primary text-white font-semibold rounded hover:bg-secondary transition"
-          >
-            Sign Up
-          </button>
-          <button 
+          {token ? (
+            <button
+              onClick={onLogout}
+              className="hidden md:block px-6 py-2 border-2 border-red-400 text-red-500 font-semibold rounded hover:bg-red-50 transition"
+            >
+              Logout
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={onLoginClick}
+                className="hidden md:block px-6 py-2 border-2 border-primary text-primary font-semibold rounded hover:bg-primary hover:text-white transition"
+              >
+                Login
+              </button>
+              <button
+                onClick={onLoginClick}
+                className="hidden md:block px-6 py-2 bg-primary text-white font-semibold rounded hover:bg-secondary transition"
+              >
+                Sign Up
+              </button>
+            </>
+          )}
+          <button
             className="md:hidden text-2xl"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
@@ -56,8 +57,11 @@ const Header = () => {
             <li><a href="#properties" className="text-gray-800 font-medium hover:text-primary">Properties</a></li>
             <li><a href="#features" className="text-gray-800 font-medium hover:text-primary">Features</a></li>
             <li><a href="#about" className="text-gray-800 font-medium hover:text-primary">About</a></li>
-            <button onClick={showLogin} className="text-left text-gray-800 font-medium hover:text-primary">Login</button>
-            <button onClick={showSignup} className="text-left text-gray-800 font-medium hover:text-primary">Sign Up</button>
+            {token ? (
+              <button onClick={onLogout} className="text-left text-red-500 font-medium hover:text-red-700">Logout</button>
+            ) : (
+              <button onClick={onLoginClick} className="text-left text-gray-800 font-medium hover:text-primary">Login</button>
+            )}
           </ul>
         </div>
       )}

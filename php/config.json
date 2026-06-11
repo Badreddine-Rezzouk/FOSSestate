@@ -1,0 +1,23 @@
+{
+  "db": {
+    "host": "mysql",
+    "port": 3306,
+    "database": "foss_estate",
+    "username": "foss",
+    "password": "foss_password"
+  },
+  "features": {
+    "maintenance_requests": {
+      "enabled": true
+    },
+    "rent_payment": {
+      "enabled": true
+    },
+    "document_management": {
+      "enabled": true
+    },
+    "tenant_portal": {
+      "enabled": true
+    }
+  }
+}

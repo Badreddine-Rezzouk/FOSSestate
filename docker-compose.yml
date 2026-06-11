@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: foss_estate
+      MYSQL_USER: foss
+      MYSQL_PASSWORD: foss_password
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./php/database_setup.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    ports:
+      - 3306:3306
+
+  php:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./php:/var/www/html
+    ports:
+      - 8080:80
+    depends_on:
+      - mysql
+
+volumes:
+  mysql-data: {}
